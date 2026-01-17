@@ -17,7 +17,7 @@ import { authEvents } from './authEvents';
 
 // OPTION 2: Live Production (Render/Railway URL)
 // Replace with your actual URL, e.g., https://careerloop.onrender.com/api
-const API_BASE_URL = 'https://backend-t5ju.onrender.com/api';
+const API_BASE_URL = 'https://carrerloopai.up.railway.app/api';
 // const API_BASE_URL = 'https://YOUR_BACKEND_URL.onrender.com/api'; 
 
 const apiClient = axios.create({
