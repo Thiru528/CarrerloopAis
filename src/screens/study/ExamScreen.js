@@ -11,10 +11,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
-import { examAPI } from '../../services/api';
+import { examAPI, studyAPI } from '../../services/api';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import Component from '../../components/ProgressBar';
+import ProgressBar from '../../components/ProgressBar';
 import { AdService } from '../../services/AdService';
 
 const ExamScreen = ({ navigation, route }) => {
@@ -192,7 +192,7 @@ const ExamScreen = ({ navigation, route }) => {
       });
 
       // Show Interstitial Ad before navigating
-      await AdService.showInterstitial();
+      // AdService.showInterstitial(); // Removed to prefer Rewarded Ad Lock on Result Screen
 
     } catch (error) {
       console.error('Failed to save exam results', error);

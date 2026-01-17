@@ -17,6 +17,12 @@ import { paymentAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import CustomToast from '../../components/CustomToast';
 
+// Conditionally require Razorpay for Native
+let RazorpayCheckout = null;
+if (Platform.OS !== 'web') {
+  RazorpayCheckout = require('react-native-razorpay').default;
+}
+
 const PremiumScreen = ({ navigation }) => {
   const { colors } = useTheme();
   const { user, updateUser } = useAuth();
@@ -42,6 +48,117 @@ const PremiumScreen = ({ navigation }) => {
   const onRefresh = () => {
     setLoading(true);
     setTimeout(() => setLoading(false), 800);
+  };
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handlePayment = async () => {
+    if (!user) {
+      Alert.alert('Login Required', 'Please login to upgrade.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const selectedPlanDetails = plans.find(p => p.id === selectedPlan);
+      // Remove currency symbol and parse
+      const amount = parseInt(selectedPlanDetails.price.replace('₹', ''));
+
+      // 1. Create Order on Backend
+      const response = await paymentAPI.createOrder(selectedPlan, amount);
+      const { order, key } = response.data; // key comes from backend now
+
+      const options = {
+        description: `Upgrade to ${selectedPlanDetails.title}`,
+        image: 'https://careerloop.onrender.com/logo.png', // valid logo url
+        currency: 'INR',
+        key: key, // Use key from backend
+        amount: order.amount,
+        name: 'CareerLoop AI',
+        order_id: order.id,
+        prefill: {
+          email: user.email,
+          contact: user.phone || '', // Check if user has phone
+          name: user.name
+        },
+        theme: { color: '#6366F1' }
+      };
+
+      // 2. Handle Payment based on Platform
+      if (Platform.OS === 'web') {
+        const res = await loadRazorpayScript();
+        if (!res) {
+          Alert.alert('Error', 'Razorpay SDK failed to load. Check your internet connection.');
+          setLoading(false);
+          return;
+        }
+
+        const paymentObject = new window.Razorpay({
+          ...options,
+          handler: async function (response) {
+            await verifyPayment(response);
+          }
+        });
+        paymentObject.open();
+        setLoading(false); // window opens, so we stop loading spinner
+      } else {
+        // Native
+        RazorpayCheckout.open(options)
+          .then(async (data) => {
+            // returns { razorpay_payment_id, razorpay_order_id, razorpay_signature }
+            await verifyPayment(data);
+          })
+          .catch((error) => {
+            console.log("Payment Error", error);
+            Alert.alert('Payment Cancelled', `Error: ${error.description || 'Action cancelled'}`);
+            setLoading(false);
+          });
+      }
+
+    } catch (error) {
+      console.log('Payment Init Error:', error);
+      Alert.alert('Error', 'Failed to initiate payment. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const verifyPayment = async (paymentData) => {
+    try {
+      setLoading(true);
+      const response = await paymentAPI.verifyPayment({
+        ...paymentData,
+        planType: selectedPlan
+      });
+
+      if (response.data.success) {
+        setToast({ visible: true, message: 'Welcome to Premium!', type: 'success' });
+        // Update local user state immediately
+        updateUser({
+          ...user,
+          isPremium: true,
+          planType: selectedPlan
+        });
+
+        setTimeout(() => {
+          navigation.navigate('MainTabs', { screen: 'Dashboard' });
+        }, 1500);
+      } else {
+        Alert.alert('Verification Failed', 'Payment verified failed on server.');
+      }
+    } catch (error) {
+      console.log('Verify Error:', error);
+      Alert.alert('Error', 'Payment successful but verification failed. Contact support.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -121,7 +238,7 @@ const PremiumScreen = ({ navigation }) => {
 
           <TouchableOpacity
             activeOpacity={0.9}
-            onPress={() => Alert.alert('TODO', 'Hook payment here')}
+            onPress={handlePayment}
           >
             <LinearGradient
               colors={['#FFD700', '#F59E0B']}

@@ -15,6 +15,7 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import ProgressBar from '../../components/ProgressBar';
 import { AdService } from '../../services/AdService';
+import { useAuth } from '../../context/AuthContext';
 
 const ExamResultScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
@@ -89,13 +90,20 @@ const ExamResultScreen = ({ navigation, route }) => {
     navigation.goBack();
   };
 
-  const [showAnalysis, setShowAnalysis] = useState(false);
+  const { user } = useAuth();
+  const [showAnalysis, setShowAnalysis] = useState(false); // Controls Score & Analysis Lock
+  const [answersUnlocked, setAnswersUnlocked] = useState(false); // Controls Review Answers Lock
   const [loadingAd, setLoadingAd] = useState(false);
+  const [loadingAnswersAd, setLoadingAnswersAd] = useState(false);
 
-  // Initialize Ads
+  // Initialize Ads & Check Premium
   React.useEffect(() => {
     AdService.initialize();
-  }, []);
+    if (user?.isPremium) {
+      setShowAnalysis(true);
+      setAnswersUnlocked(true);
+    }
+  }, [user]);
 
   const handleUnlockAnalysis = async () => {
     setLoadingAd(true);
@@ -103,17 +111,31 @@ const ExamResultScreen = ({ navigation, route }) => {
       const rewarded = await AdService.showRewarded();
       if (rewarded) {
         setShowAnalysis(true);
-        Alert.alert("Unlocked!", "Detailed analysis is now available.");
+        Alert.alert("Unlocked!", "Your Result & Analysis are now visible.");
       } else {
-        // Fallback or error
-        Alert.alert("Ad Skipped", "You need to finish the ad to unlock details.");
+        Alert.alert("Ad Skipped", "Watch the ad to see your results.");
       }
     } catch (error) {
-      console.log('Ad Error', error);
-      // Fallback: Unlock anyway if ad fails (User Experience Rule #6)
       setShowAnalysis(true);
     } finally {
       setLoadingAd(false);
+    }
+  };
+
+  const handleUnlockAnswers = async () => {
+    setLoadingAnswersAd(true);
+    try {
+      const rewarded = await AdService.showRewarded();
+      if (rewarded) {
+        setAnswersUnlocked(true);
+        Alert.alert("Unlocked!", "Answer Key is now visible.");
+      } else {
+        Alert.alert("Ad Skipped", "Watch the ad to call the answer key.");
+      }
+    } catch (error) {
+      setAnswersUnlocked(true);
+    } finally {
+      setLoadingAnswersAd(false);
     }
   };
 
@@ -139,270 +161,298 @@ const ExamResultScreen = ({ navigation, route }) => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Result Summary */}
-        <Card>
-          <View style={styles.resultHeader}>
-            <View style={{ position: 'absolute', top: 0, right: 0 }}>
-              <View style={{ backgroundColor: colors.success + '20', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }}>
-                <Text style={{ color: colors.success, fontSize: 10, fontWeight: 'bold' }}>SAVED TO DASHBOARD</Text>
-              </View>
-            </View>
-
-            <Ionicons
-              name={getResultIcon()}
-              size={64}
-              color={getResultColor()}
-            />
-            <Text style={[styles.resultTitle, { color: colors.text }]}>
-              {results.passed ? 'Congratulations!' : 'Keep Learning!'}
-            </Text>
-            <Text style={[styles.resultMessage, { color: colors.textSecondary }]}>
-              {getResultMessage()}
-            </Text>
-          </View>
-
-          <View style={styles.scoreContainer}>
-            <Text style={[styles.scoreLabel, { color: colors.textSecondary }]}>
-              Your Score
-            </Text>
-            <Text style={[styles.scoreValue, { color: getResultColor() }]}>
-              {results.percentage}%
-            </Text>
-            <Text style={[styles.scoreDetails, { color: colors.textSecondary }]}>
-              {results.correctAnswers} out of {results.totalQuestions} correct
-            </Text>
-          </View>
-
-          <ProgressBar
-            progress={results.percentage / 100}
-            color={getResultColor()}
-            showPercentage={false}
-            style={styles.scoreProgress}
-          />
-        </Card>
-
-        {/* Exam Statistics */}
-        <Card>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Exam Statistics
-          </Text>
-
-          <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
-              <Ionicons name="checkmark-circle" size={24} color={colors.success} />
-              <Text style={[styles.statValue, { color: colors.text }]}>
-                {results.correctAnswers}
-              </Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                Correct
-              </Text>
-            </View>
-
-            <View style={styles.statItem}>
-              <Ionicons name="close-circle" size={24} color={colors.danger} />
-              <Text style={[styles.statValue, { color: colors.text }]}>
-                {results.totalQuestions - results.correctAnswers}
-              </Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                Incorrect
-              </Text>
-            </View>
-
-            <View style={styles.statItem}>
-              <Ionicons name="time" size={24} color={colors.primary} />
-              <Text style={[styles.statValue, { color: colors.text }]}>
-                {formatTime(results.timeSpent)}
-              </Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                Time Spent
-              </Text>
-            </View>
-
-            <View style={styles.statItem}>
-              <Ionicons name="school" size={24} color={colors.secondary} />
-              <Text style={[styles.statValue, { color: colors.text }]}>
-                {skill}
-              </Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                Subject
-              </Text>
-            </View>
-          </View>
-        </Card>
-
-        {/* Performance Analysis (LOCKED) */}
         {!showAnalysis ? (
           <Card>
-            <View style={{ alignItems: 'center', padding: 10 }}>
-              <Ionicons name="lock-closed" size={40} color={colors.primary} style={{ marginBottom: 10 }} />
-              <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 5 }}>Detailed AI Analysis Locked</Text>
-              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginBottom: 20 }}>
-                Unlock personalized strength & weakness insights by watching a short ad.
+            <View style={{ alignItems: 'center', padding: 20 }}>
+              <Ionicons name="lock-closed" size={64} color={colors.primary} style={{ marginBottom: 16 }} />
+              <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.text, marginBottom: 8 }}>
+                Exam Results Locked
+              </Text>
+              <Text style={{ textAlign: 'center', color: colors.textSecondary, marginBottom: 24, fontSize: 16 }}>
+                Watch a short video to reveal your Score, detailed analysis, and answer key.
               </Text>
               <Button
-                title={loadingAd ? "Loading Ad..." : "Watch Ad to Unlock 🔓"}
+                title={loadingAd ? "Loading Ad..." : "Watch Ad to Unlock Results 🔓"}
                 onPress={handleUnlockAnalysis}
                 disabled={loadingAd}
+                style={{ width: '100%', marginBottom: 16 }}
               />
+              <Button title="Back to Dashboard" onPress={navigateToDashboard} variant="secondary" style={{ width: '100%' }} />
             </View>
           </Card>
         ) : (
-          <Card>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Performance Analysis
-            </Text>
+          <>
+            {/* Result Summary */}
+            <Card>
+              <View style={styles.resultHeader}>
+                <View style={{ position: 'absolute', top: 0, right: 0 }}>
+                  <View style={{ backgroundColor: colors.success + '20', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }}>
+                    <Text style={{ color: colors.success, fontSize: 10, fontWeight: 'bold' }}>SAVED TO DASHBOARD</Text>
+                  </View>
+                </View>
 
-            <View style={styles.analysisItem}>
-              <View style={styles.analysisHeader}>
-                <Text style={[styles.analysisLabel, { color: colors.text }]}>
-                  Overall Performance
+                <Ionicons
+                  name={getResultIcon()}
+                  size={64}
+                  color={getResultColor()}
+                />
+                <Text style={[styles.resultTitle, { color: colors.text }]}>
+                  {results.passed ? 'Congratulations!' : 'Keep Learning!'}
                 </Text>
-                <Text style={[styles.analysisValue, { color: getResultColor() }]}>
-                  {results.percentage >= 90 ? 'Excellent' :
-                    results.percentage >= 80 ? 'Very Good' :
-                      results.percentage >= 70 ? 'Good' :
-                        results.percentage >= 60 ? 'Fair' : 'Needs Improvement'}
+                <Text style={[styles.resultMessage, { color: colors.textSecondary }]}>
+                  {getResultMessage()}
                 </Text>
               </View>
-            </View>
 
-            <View style={styles.analysisItem}>
-              <View style={styles.analysisHeader}>
-                <Text style={[styles.analysisLabel, { color: colors.text }]}>
-                  Pass Status
+              <View style={styles.scoreContainer}>
+                <Text style={[styles.scoreLabel, { color: colors.textSecondary }]}>
+                  Your Score
                 </Text>
-                <Text style={[styles.analysisValue, { color: getResultColor() }]}>
-                  {results.passed ? 'PASSED' : 'FAILED'}
+                <Text style={[styles.scoreValue, { color: getResultColor() }]}>
+                  {results.percentage}%
+                </Text>
+                <Text style={[styles.scoreDetails, { color: colors.textSecondary }]}>
+                  {results.correctAnswers} out of {results.totalQuestions} correct
                 </Text>
               </View>
-              <Text style={[styles.analysisDescription, { color: colors.textSecondary }]}>
-                {results.passed
-                  ? 'You have successfully passed this exam!'
-                  : 'You need 70% or higher to pass. Keep studying and try again!'
-                }
-              </Text>
-            </View>
-          </Card>
-        )}
 
-        {/* Review Answers */}
-        <Card>
-          <View style={styles.reviewHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Review Answers
-            </Text>
-            <TouchableOpacity
-              onPress={() => setShowAnswers(!showAnswers)}
-              style={styles.toggleButton}
-            >
-              <Text style={[styles.toggleText, { color: colors.primary }]}>
-                {showAnswers ? 'Hide' : 'Show'} Answers
-              </Text>
-              <Ionicons
-                name={showAnswers ? 'chevron-up' : 'chevron-down'}
-                size={16}
-                color={colors.primary}
+              <ProgressBar
+                progress={results.percentage / 100}
+                color={getResultColor()}
+                showPercentage={false}
+                style={styles.scoreProgress}
               />
-            </TouchableOpacity>
-          </View>
+            </Card>
 
-          {showAnswers && (
-            <View style={styles.answersContainer}>
-              {examData.questions.map((question, index) => {
-                const userAnswer = selectedAnswers[question.id];
-                const isCorrect = userAnswer === question.correctAnswer;
+            {/* Exam Statistics */}
+            <Card>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Exam Statistics
+              </Text>
 
-                return (
-                  <View key={question.id} style={[
-                    styles.answerItem,
-                    { backgroundColor: colors.surface }
-                  ]}>
-                    <View style={styles.answerHeader}>
-                      <Text style={[styles.questionNumber, { color: colors.text }]}>
-                        Q{index + 1}
+              <View style={styles.statsGrid}>
+                <View style={styles.statItem}>
+                  <Ionicons name="checkmark-circle" size={24} color={colors.success} />
+                  <Text style={[styles.statValue, { color: colors.text }]}>
+                    {results.correctAnswers}
+                  </Text>
+                  <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                    Correct
+                  </Text>
+                </View>
+
+                <View style={styles.statItem}>
+                  <Ionicons name="close-circle" size={24} color={colors.danger} />
+                  <Text style={[styles.statValue, { color: colors.text }]}>
+                    {results.totalQuestions - results.correctAnswers}
+                  </Text>
+                  <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                    Incorrect
+                  </Text>
+                </View>
+
+                <View style={styles.statItem}>
+                  <Ionicons name="time" size={24} color={colors.primary} />
+                  <Text style={[styles.statValue, { color: colors.text }]}>
+                    {formatTime(results.timeSpent)}
+                  </Text>
+                  <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                    Time Spent
+                  </Text>
+                </View>
+
+                <View style={styles.statItem}>
+                  <Ionicons name="school" size={24} color={colors.secondary} />
+                  <Text style={[styles.statValue, { color: colors.text }]}>
+                    {skill}
+                  </Text>
+                  <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                    Subject
+                  </Text>
+                </View>
+              </View>
+            </Card>
+
+            {/* Protected Content: Analysis & Review Answers */}
+
+            <>
+              {/* Performance Analysis */}
+              <Card>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Performance Analysis
+                </Text>
+
+                <View style={styles.analysisItem}>
+                  <View style={styles.analysisHeader}>
+                    <Text style={[styles.analysisLabel, { color: colors.text }]}>
+                      Overall Performance
+                    </Text>
+                    <Text style={[styles.analysisValue, { color: getResultColor() }]}>
+                      {results.percentage >= 90 ? 'Excellent' :
+                        results.percentage >= 80 ? 'Very Good' :
+                          results.percentage >= 70 ? 'Good' :
+                            results.percentage >= 60 ? 'Fair' : 'Needs Improvement'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.analysisItem}>
+                  <View style={styles.analysisHeader}>
+                    <Text style={[styles.analysisLabel, { color: colors.text }]}>
+                      Pass Status
+                    </Text>
+                    <Text style={[styles.analysisValue, { color: getResultColor() }]}>
+                      {results.passed ? 'PASSED' : 'FAILED'}
+                    </Text>
+                  </View>
+                  <Text style={[styles.analysisDescription, { color: colors.textSecondary }]}>
+                    {results.passed
+                      ? 'You have successfully passed this exam!'
+                      : 'You need 70% or higher to pass. Keep studying and try again!'
+                    }
+                  </Text>
+                </View>
+              </Card>
+
+              {/* Review Answers (Double Lock) */}
+              {!answersUnlocked ? (
+                <Card>
+                  <View style={{ alignItems: 'center', padding: 10 }}>
+                    <Ionicons name="key" size={40} color={colors.primary} style={{ marginBottom: 10 }} />
+                    <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 5 }}>Answer Key Locked</Text>
+                    <Text style={{ color: colors.textSecondary, textAlign: 'center', marginBottom: 20 }}>
+                      Watch one more short ad to view the full question-by-question solution key.
+                    </Text>
+                    <Button
+                      title={loadingAnswersAd ? "Loading Ad..." : "Unlock Answers 🔐"}
+                      onPress={handleUnlockAnswers}
+                      disabled={loadingAnswersAd}
+                    />
+                  </View>
+                </Card>
+              ) : (
+                <Card>
+                  <View style={styles.reviewHeader}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                      Review Answers
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setShowAnswers(!showAnswers)}
+                      style={styles.toggleButton}
+                    >
+                      <Text style={[styles.toggleText, { color: colors.primary }]}>
+                        {showAnswers ? 'Hide' : 'Show'} Answers
                       </Text>
                       <Ionicons
-                        name={isCorrect ? 'checkmark-circle' : 'close-circle'}
-                        size={20}
-                        color={isCorrect ? colors.success : colors.danger}
+                        name={showAnswers ? 'chevron-up' : 'chevron-down'}
+                        size={16}
+                        color={colors.primary}
                       />
-                    </View>
-
-                    <Text style={[styles.answerQuestion, { color: colors.text }]}>
-                      {question.question}
-                    </Text>
-
-                    <View style={styles.answerDetails}>
-                      <Text style={[styles.answerLabel, { color: colors.textSecondary }]}>
-                        Your Answer:
-                      </Text>
-                      <Text style={[
-                        styles.answerText,
-                        { color: isCorrect ? colors.success : colors.danger }
-                      ]}>
-                        {userAnswer !== undefined ? question.options[userAnswer] : 'Not answered'}
-                      </Text>
-                    </View>
-
-                    {!isCorrect && (
-                      <View style={styles.answerDetails}>
-                        <Text style={[styles.answerLabel, { color: colors.textSecondary }]}>
-                          Correct Answer:
-                        </Text>
-                        <Text style={[styles.answerText, { color: colors.success }]}>
-                          {question.options[question.correctAnswer]}
-                        </Text>
-                      </View>
-                    )}
-
-                    {question.explanation && (
-                      <View style={[styles.explanationContainer, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border }]}>
-                        <Text style={{ color: colors.primary, fontWeight: 'bold', marginBottom: 4, fontSize: 13 }}>
-                          💡 Explanation:
-                        </Text>
-                        <Text style={[styles.explanationText, { color: colors.text, fontStyle: 'italic' }]}>
-                          {question.explanation}
-                        </Text>
-                      </View>
-                    )}
+                    </TouchableOpacity>
                   </View>
-                );
 
-              })}
-            </View>
-          )}
-        </Card>
+                  {showAnswers && (
+                    <View style={styles.answersContainer}>
+                      {examData.questions.map((question, index) => {
+                        const userAnswer = selectedAnswers[question.id];
+                        const isCorrect = userAnswer === question.correctAnswer;
 
-        {/* Action Buttons */}
-        <Card>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            What's Next?
-          </Text>
+                        return (
+                          <View key={question.id} style={[
+                            styles.answerItem,
+                            { backgroundColor: colors.surface }
+                          ]}>
+                            <View style={styles.answerHeader}>
+                              <Text style={[styles.questionNumber, { color: colors.text }]}>
+                                Q{index + 1}
+                              </Text>
+                              <Ionicons
+                                name={isCorrect ? 'checkmark-circle' : 'close-circle'}
+                                size={20}
+                                color={isCorrect ? colors.success : colors.danger}
+                              />
+                            </View>
 
-          <View style={styles.actionButtons}>
-            {!results.passed && (
-              <Button
-                title="Retake Exam"
-                onPress={handleRetakeExam}
-                style={styles.actionButton}
-              />
-            )}
+                            <Text style={[styles.answerQuestion, { color: colors.text }]}>
+                              {question.question}
+                            </Text>
 
-            <Button
-              title="Continue Learning"
-              onPress={navigateToStudy}
-              variant="secondary"
-              style={styles.actionButton}
-            />
+                            <View style={styles.answerDetails}>
+                              <Text style={[styles.answerLabel, { color: colors.textSecondary }]}>
+                                Your Answer:
+                              </Text>
+                              <Text style={[
+                                styles.answerText,
+                                { color: isCorrect ? colors.success : colors.danger }
+                              ]}>
+                                {userAnswer !== undefined ? question.options[userAnswer] : 'Not answered'}
+                              </Text>
+                            </View>
 
-            <Button
-              title="Back to Dashboard"
-              onPress={navigateToDashboard}
-              variant="secondary"
-              style={styles.actionButton}
-            />
-          </View>
-        </Card>
+                            {!isCorrect && (
+                              <View style={styles.answerDetails}>
+                                <Text style={[styles.answerLabel, { color: colors.textSecondary }]}>
+                                  Correct Answer:
+                                </Text>
+                                <Text style={[styles.answerText, { color: colors.success }]}>
+                                  {question.options[question.correctAnswer]}
+                                </Text>
+                              </View>
+                            )}
+
+                            {question.explanation && (
+                              <View style={[styles.explanationContainer, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border }]}>
+                                <Text style={{ color: colors.primary, fontWeight: 'bold', marginBottom: 4, fontSize: 13 }}>
+                                  💡 Explanation:
+                                </Text>
+                                <Text style={[styles.explanationText, { color: colors.text, fontStyle: 'italic' }]}>
+                                  {question.explanation}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        );
+
+                      })}
+                    </View>
+                  )}
+                </Card>
+              )}
+            </>
+
+
+            {/* Action Buttons */}
+            <Card>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                What's Next?
+              </Text>
+
+              <View style={styles.actionButtons}>
+                {!results.passed && (
+                  <Button
+                    title="Retake Exam"
+                    onPress={handleRetakeExam}
+                    style={styles.actionButton}
+                  />
+                )}
+
+                <Button
+                  title="Continue Learning"
+                  onPress={navigateToStudy}
+                  variant="secondary"
+                  style={styles.actionButton}
+                />
+
+                <Button
+                  title="Back to Dashboard"
+                  onPress={navigateToDashboard}
+                  variant="secondary"
+                  style={styles.actionButton}
+                />
+              </View>
+            </Card>
+          </>
+        )}
       </ScrollView >
     </SafeAreaView >
   );

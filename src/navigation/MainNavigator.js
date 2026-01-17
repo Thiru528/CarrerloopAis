@@ -100,7 +100,7 @@ const MainNavigator = () => {
         name="PrivacyPolicy"
         component={require('../screens/profile/PrivacyPolicyScreen').default}
         options={{
-          headerShown: true,
+          headerShown: false,
           title: 'Privacy Policy',
           headerBackTitle: 'Back'
         }}
@@ -109,7 +109,7 @@ const MainNavigator = () => {
         name="Terms"
         component={require('../screens/profile/TermsScreen').default}
         options={{
-          headerShown: true,
+          headerShown: false,
           title: 'Terms of Service',
           headerBackTitle: 'Back'
         }}

@@ -4,9 +4,13 @@ import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads'
 
 const BANNER_ID = TestIds.BANNER; // Replace with production ID later
 
+import { useAuth } from '../context/AuthContext';
+
 const AdBanner = () => {
-    if (Platform.OS === 'web') {
-        return null; // Don't render anything on web
+    const { user } = useAuth();
+
+    if (Platform.OS === 'web' || user?.isPremium) {
+        return null; // Don't render anything on web or for premium users
     }
 
     return (

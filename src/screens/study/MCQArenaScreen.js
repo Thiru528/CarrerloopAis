@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { examAPI } from '../../services/api';
+import { AdService } from '../../services/AdService';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Markdown from 'react-native-markdown-display';
@@ -33,6 +34,41 @@ const MCQArenaScreen = ({ route, navigation }) => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [resultUnlocked, setResultUnlocked] = useState(false);
+  const [loadingAd, setLoadingAd] = useState(false);
+
+  useEffect(() => {
+    AdService.initialize();
+    if (user?.isPremium) {
+      setResultUnlocked(true);
+    }
+  }, [user]);
+
+  const handleUnlockResult = async () => {
+    setLoadingAd(true);
+    try {
+      const rewarded = await AdService.showRewarded();
+      if (rewarded) {
+        setResultUnlocked(true);
+        Alert.alert("Unlocked!", "Your results are now visible.");
+      } else {
+        Alert.alert("Ad Skipped", "Watch the ad to see your results.");
+      }
+    } catch (error) {
+      setResultUnlocked(true);
+    } finally {
+      setLoadingAd(false);
+    }
+  };
+
+  const [quizFinished, setQuizFinished] = useState(false);
+  const [source, setSource] = useState('LOADING');
+
+  useEffect(() => {
+    // Prevent loading if user is locked
+    if (!user?.isPremium && !freeAccess) return;
+    loadQuestions();
+  }, []);
 
   // Premium Gate (Bypass if freeAccess is true)
   if (!user?.isPremium && !freeAccess) {
@@ -71,13 +107,9 @@ const MCQArenaScreen = ({ route, navigation }) => {
     );
   }
 
-  useEffect(() => {
-    loadQuestions();
-  }, []);
 
-  const [quizFinished, setQuizFinished] = useState(false);
 
-  const [source, setSource] = useState('LOADING');
+
 
   const loadQuestions = async () => {
     try {
@@ -191,25 +223,49 @@ const MCQArenaScreen = ({ route, navigation }) => {
 
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background, padding: 20, justifyContent: 'center' }]}>
-        <Card style={{ alignItems: 'center', padding: 30 }}>
-          <Ionicons name={passed ? "trophy" : "alert-circle"} size={64} color={passed ? colors.primary : colors.danger} style={{ marginBottom: 20 }} />
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.text, marginBottom: 10 }}>
-            {passed ? "Day Completed! 🎉" : "Keep Try! 💪"}
-          </Text>
+        {!resultUnlocked ? (
+          <Card style={{ alignItems: 'center', padding: 30 }}>
+            <Ionicons name="lock-closed" size={64} color={colors.primary} style={{ marginBottom: 20 }} />
+            <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.text, marginBottom: 10 }}>
+              Results Locked
+            </Text>
+            <Text style={{ fontSize: 16, color: colors.textSecondary, marginBottom: 20, textAlign: 'center' }}>
+              Watch a short ad to reveal your score and progress.
+            </Text>
+            <Button
+              title={loadingAd ? "Loading Ad..." : "Watch Ad to Unlock 🔓"}
+              onPress={handleUnlockResult}
+              disabled={loadingAd}
+              style={{ width: '100%' }}
+            />
+            <Button
+              title="Back to Study Plan"
+              onPress={() => navigation.goBack()}
+              variant="secondary"
+              style={{ width: '100%', marginTop: 10 }}
+            />
+          </Card>
+        ) : (
+          <Card style={{ alignItems: 'center', padding: 30 }}>
+            <Ionicons name={passed ? "trophy" : "alert-circle"} size={64} color={passed ? colors.primary : colors.danger} style={{ marginBottom: 20 }} />
+            <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.text, marginBottom: 10 }}>
+              {passed ? "Day Completed! 🎉" : "Keep Try! 💪"}
+            </Text>
 
-          <Text style={{ fontSize: 18, color: colors.textSecondary, marginBottom: 5 }}>
-            You scored <Text style={{ fontWeight: 'bold', color: passed ? colors.primary : colors.danger }}>{score}/{questions.length}</Text>
-          </Text>
+            <Text style={{ fontSize: 18, color: colors.textSecondary, marginBottom: 5 }}>
+              You scored <Text style={{ fontWeight: 'bold', color: passed ? colors.primary : colors.danger }}>{score}/{questions.length}</Text>
+            </Text>
 
-          <Text style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 20, textAlign: 'center' }}>
-            {passed ? "Great job! The next day is now unlocked." : "You need 60% to unlock the next day."}
-          </Text>
+            <Text style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 20, textAlign: 'center' }}>
+              {passed ? "Great job! The next day is now unlocked." : "You need 60% to unlock the next day."}
+            </Text>
 
-          <View style={{ width: '100%', gap: 10 }}>
-            {!passed && <Button title="Retry Quiz" onPress={handleRetry} variant="secondary" />}
-            <Button title="Back to Study Plan" onPress={() => navigation.goBack()} />
-          </View>
-        </Card>
+            <View style={{ width: '100%', gap: 10 }}>
+              {!passed && <Button title="Retry Quiz" onPress={handleRetry} variant="secondary" />}
+              <Button title="Back to Study Plan" onPress={() => navigation.goBack()} />
+            </View>
+          </Card>
+        )}
       </SafeAreaView>
     );
   }

@@ -13,7 +13,7 @@ import { authEvents } from './authEvents';
 // -----------------------------------------------------------------------------
 
 // OPTION 1: Local Development (Use your computer's IP)
-// const API_BASE_URL = 'http://10.169.126.4:5005/api'; 
+// const API_BASE_URL = 'http://10.169.126.4:5005/api';
 
 // OPTION 2: Live Production (Render/Railway URL)
 // Replace with your actual URL, e.g., https://careerloop.onrender.com/api

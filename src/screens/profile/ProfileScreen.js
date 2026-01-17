@@ -21,6 +21,7 @@ import Button from '../../components/Button';
 import Input from '../../components/Input';
 import Avatar from '../../components/Avatar';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import AdBanner from '../../components/AdBanner';
 
 const ProfileScreen = ({ navigation }) => {
   const { colors, isDark, toggleTheme } = useTheme();
@@ -351,6 +352,7 @@ const ProfileScreen = ({ navigation }) => {
         <Text style={[styles.versionText, { color: colors.textSecondary }]}>Version 1.0.2</Text>
         <View style={{ height: 20 }} />
       </ScrollView>
+      <AdBanner />
     </SafeAreaView>
   );
 };

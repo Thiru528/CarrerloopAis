@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import AdBanner from '../../components/AdBanner';
 
 const TermsScreen = ({ navigation }) => {
     const { colors } = useTheme();
@@ -16,7 +17,7 @@ const TermsScreen = ({ navigation }) => {
                 <View style={{ width: 32 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.content}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
                 <Text style={[styles.title, { color: colors.primary }]}>AI Career Coach – Terms & Conditions</Text>
                 <Text style={[styles.intro, { color: colors.textSecondary }]}>By using this app, you agree to the following terms.</Text>
 
@@ -61,6 +62,7 @@ const TermsScreen = ({ navigation }) => {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
+            <AdBanner />
         </SafeAreaView>
     );
 };

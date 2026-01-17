@@ -11,10 +11,44 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import Card from '../../components/Card';
 import ProgressBar from '../../components/ProgressBar';
+import Button from '../../components/Button';
+import { useAuth } from '../../context/AuthContext';
+import { AdService } from '../../services/AdService';
+import { Alert } from 'react-native';
 
 const ResumeAnalysisScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const { analysis } = route.params || {};
+
+  const [isUnlocked, setIsUnlocked] = React.useState(false);
+  const [loadingAd, setLoadingAd] = React.useState(false);
+
+  // Initialize Ads & Check Premium
+  React.useEffect(() => {
+    AdService.initialize();
+    if (user?.isPremium) {
+      setIsUnlocked(true);
+    }
+  }, [user]);
+
+  const handleUnlockMock = async () => {
+    setLoadingAd(true);
+    try {
+      const rewarded = await AdService.showRewarded();
+      if (rewarded) {
+        setIsUnlocked(true);
+        Alert.alert("Unlocked!", "Full analysis is now available.");
+      } else {
+        Alert.alert("Ad Skipped", "Watch the ad to unlock detailed insights.");
+      }
+    } catch (error) {
+      // Fallback
+      setIsUnlocked(true);
+    } finally {
+      setLoadingAd(false);
+    }
+  };
 
   // Mock analysis data if not provided
   console.log('✅ RESUME ANALYSIS DATA:', analysis || 'Using Mock Data'); // DEBUG LOG
@@ -64,152 +98,181 @@ const ResumeAnalysisScreen = ({ navigation, route }) => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* ATS Score */}
-        <Card>
-          <View style={styles.scoreHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              ATS Score
-            </Text>
-            <Text style={[
-              styles.scoreValue,
-              { color: getScoreColor(analysisData.atsScore) }
-            ]}>
-              {analysisData.atsScore}%
-            </Text>
-          </View>
-          <ProgressBar
-            progress={analysisData.atsScore / 100}
-            color={getScoreColor(analysisData.atsScore)}
-            showPercentage={false}
-          />
-          <Text style={[styles.scoreDescription, { color: colors.textSecondary }]}>
-            Your resume has a {analysisData.atsScore >= 80 ? 'high' : analysisData.atsScore >= 60 ? 'moderate' : 'low'} chance of passing ATS filters
-          </Text>
-        </Card>
 
-        {/* Basic Info */}
-        <Card>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Profile Summary
-          </Text>
-          <View style={styles.infoGrid}>
-            <View style={styles.infoItem}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
-                Experience Level
-              </Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>
-                {analysisData.experienceLevel}
-              </Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
-                Domain
-              </Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>
-                {analysisData.domain}
-              </Text>
-            </View>
-          </View>
-        </Card>
-
-
-
-        {/* Suggested Roles */}
-        {(analysisData.suggestedJobRoles || []).length > 0 && (
+        {/* AD LOCK CARD */}
+        {!isUnlocked && (
           <Card>
-            <View style={styles.recommendationsHeader}>
-              <Ionicons name="briefcase" size={24} color={colors.primary} />
-              <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
-                Suggested Roles
+            <View style={{ alignItems: 'center', padding: 16 }}>
+              <Ionicons name="lock-closed" size={48} color={colors.primary} style={{ marginBottom: 12 }} />
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 8 }}>
+                Analysis Locked
               </Text>
-            </View>
-            <View style={styles.skillsContainer}>
-              {analysisData.suggestedJobRoles.map((role, index) => (
-                <View
-                  key={index}
-                  style={[styles.skillTag, { backgroundColor: colors.primary + '20' }]}
-                >
-                  <Text style={[styles.skillText, { color: colors.primary }]}>
-                    {role}
-                  </Text>
-                </View>
-              ))}
+              <Text style={{ textAlign: 'center', color: colors.textSecondary, marginBottom: 20 }}>
+                Unlock your detailed AI resume report by watching a short ad.
+              </Text>
+              <Button
+                title={loadingAd ? "Loading Ad..." : "Watch Ad to Unlock 🔓"}
+                onPress={handleUnlockMock}
+                disabled={loadingAd}
+                style={{ width: '100%' }}
+              />
+              <Text style={{ marginTop: 12, fontSize: 12, color: colors.textSecondary }}>
+                Premium members skip this step.
+              </Text>
             </View>
           </Card>
         )}
 
-        {/* Extracted Skills */}
-        <Card>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Extracted Skills ({analysisData.extractedSkills.length})
-          </Text>
-          <View style={styles.skillsContainer}>
-            {(analysisData.extractedSkills || []).map((skill, index) => (
-              <View
-                key={index}
-                style={[styles.skillTag, { backgroundColor: colors.surface }]}
-              >
-                <Text style={[styles.skillText, { color: colors.text }]}>
-                  {skill}
+        {isUnlocked && (
+          <>
+            {/* ATS Score - Unlocked */}
+            <Card>
+              <View style={styles.scoreHeader}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  ATS Score
+                </Text>
+                <Text style={[
+                  styles.scoreValue,
+                  { color: getScoreColor(analysisData.atsScore) }
+                ]}>
+                  {analysisData.atsScore}%
                 </Text>
               </View>
-            ))}
-          </View>
-        </Card>
-
-        {/* Strengths */}
-        <Card>
-          <View style={styles.strengthsHeader}>
-            <Ionicons name="checkmark-circle" size={24} color={colors.success} />
-            <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
-              Strengths
-            </Text>
-          </View>
-          {(analysisData.strengths || []).map((strength, index) => (
-            <View key={index} style={styles.listItem}>
-              <Ionicons name="checkmark" size={16} color={colors.success} />
-              <Text style={[styles.listText, { color: colors.text }]}>
-                {strength}
+              <ProgressBar
+                progress={analysisData.atsScore / 100}
+                color={getScoreColor(analysisData.atsScore)}
+                showPercentage={false}
+              />
+              <Text style={[styles.scoreDescription, { color: colors.textSecondary }]}>
+                Your resume has a {analysisData.atsScore >= 80 ? 'high' : analysisData.atsScore >= 60 ? 'moderate' : 'low'} chance of passing ATS filters
               </Text>
-            </View>
-          ))}
-        </Card>
+            </Card>
 
-        {/* Weaknesses */}
-        <Card>
-          <View style={styles.weaknessesHeader}>
-            <Ionicons name="alert-circle" size={24} color={colors.warning} />
-            <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
-              Areas for Improvement
-            </Text>
-          </View>
-          {(analysisData.weaknesses || []).map((weakness, index) => (
-            <View key={index} style={styles.listItem}>
-              <Ionicons name="alert" size={16} color={colors.warning} />
-              <Text style={[styles.listText, { color: colors.text }]}>
-                {weakness}
+            {/* Basic Info */}
+            <Card>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Profile Summary
               </Text>
-            </View>
-          ))}
-        </Card>
+              <View style={styles.infoGrid}>
+                <View style={styles.infoItem}>
+                  <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
+                    Experience Level
+                  </Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>
+                    {analysisData.experienceLevel}
+                  </Text>
+                </View>
+                <View style={styles.infoItem}>
+                  <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
+                    Domain
+                  </Text>
+                  <Text style={[styles.infoValue, { color: colors.text }]}>
+                    {analysisData.domain}
+                  </Text>
+                </View>
+              </View>
+            </Card>
 
-        {/* Recommendations */}
-        <Card>
-          <View style={styles.recommendationsHeader}>
-            <Ionicons name="bulb" size={24} color={colors.primary} />
-            <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
-              AI Recommendations
-            </Text>
-          </View>
-          {(analysisData.suggestions || analysisData.recommendations || []).map((recommendation, index) => (
-            <View key={index} style={styles.listItem}>
-              <Ionicons name="arrow-forward" size={16} color={colors.primary} />
-              <Text style={[styles.listText, { color: colors.text }]}>
-                {recommendation}
+
+
+            {/* Suggested Roles */}
+            {(analysisData.suggestedJobRoles || []).length > 0 && (
+              <Card>
+                <View style={styles.recommendationsHeader}>
+                  <Ionicons name="briefcase" size={24} color={colors.primary} />
+                  <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
+                    Suggested Roles
+                  </Text>
+                </View>
+                <View style={styles.skillsContainer}>
+                  {analysisData.suggestedJobRoles.map((role, index) => (
+                    <View
+                      key={index}
+                      style={[styles.skillTag, { backgroundColor: colors.primary + '20' }]}
+                    >
+                      <Text style={[styles.skillText, { color: colors.primary }]}>
+                        {role}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </Card>
+            )}
+
+            {/* Extracted Skills */}
+            <Card>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Extracted Skills ({analysisData.extractedSkills.length})
               </Text>
-            </View>
-          ))}
-        </Card>
+              <View style={styles.skillsContainer}>
+                {(analysisData.extractedSkills || []).map((skill, index) => (
+                  <View
+                    key={index}
+                    style={[styles.skillTag, { backgroundColor: colors.surface }]}
+                  >
+                    <Text style={[styles.skillText, { color: colors.text }]}>
+                      {skill}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </Card>
+
+            {/* Strengths */}
+            <Card>
+              <View style={styles.strengthsHeader}>
+                <Ionicons name="checkmark-circle" size={24} color={colors.success} />
+                <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
+                  Strengths
+                </Text>
+              </View>
+              {(analysisData.strengths || []).map((strength, index) => (
+                <View key={index} style={styles.listItem}>
+                  <Ionicons name="checkmark" size={16} color={colors.success} />
+                  <Text style={[styles.listText, { color: colors.text }]}>
+                    {strength}
+                  </Text>
+                </View>
+              ))}
+            </Card>
+
+            {/* Weaknesses */}
+            <Card>
+              <View style={styles.weaknessesHeader}>
+                <Ionicons name="alert-circle" size={24} color={colors.warning} />
+                <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
+                  Areas for Improvement
+                </Text>
+              </View>
+              {(analysisData.weaknesses || []).map((weakness, index) => (
+                <View key={index} style={styles.listItem}>
+                  <Ionicons name="alert" size={16} color={colors.warning} />
+                  <Text style={[styles.listText, { color: colors.text }]}>
+                    {weakness}
+                  </Text>
+                </View>
+              ))}
+            </Card>
+
+            {/* Recommendations */}
+            <Card>
+              <View style={styles.recommendationsHeader}>
+                <Ionicons name="bulb" size={24} color={colors.primary} />
+                <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
+                  AI Recommendations
+                </Text>
+              </View>
+              {(analysisData.suggestions || analysisData.recommendations || []).map((recommendation, index) => (
+                <View key={index} style={styles.listItem}>
+                  <Ionicons name="arrow-forward" size={16} color={colors.primary} />
+                  <Text style={[styles.listText, { color: colors.text }]}>
+                    {recommendation}
+                  </Text>
+                </View>
+              ))}
+            </Card>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView >
   );
