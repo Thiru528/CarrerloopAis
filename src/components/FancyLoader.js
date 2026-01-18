@@ -80,7 +80,7 @@ const FancyLoader = ({ message = "Thinking...", size = 100 }) => {
                 {/* Center Image Logo */}
                 <View style={[styles.centerIcon, { width: size * 0.6, height: size * 0.6 }]}>
                     <Image
-                        source={require('../../assets/logosafe.png')}
+                        source={require('../../assets/careerloopicon.png')}
                         style={{ width: '100%', height: '100%' }}
                         resizeMode="contain"
                     />
