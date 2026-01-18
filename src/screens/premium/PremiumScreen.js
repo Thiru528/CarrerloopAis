@@ -16,7 +16,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { paymentAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import CustomToast from '../../components/CustomToast';
-import AdBanner from '../../components/AdBanner';
+
 
 // Conditionally require Razorpay for Native
 let RazorpayCheckout = null;
@@ -254,7 +254,7 @@ const PremiumScreen = ({ navigation }) => {
       </ScrollView>
 
 
-      <AdBanner />
+
 
       <CustomToast
         visible={toast.visible}

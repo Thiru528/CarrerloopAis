@@ -21,7 +21,7 @@ import { useAuth } from '../../context/AuthContext';
 import { chatAPI } from '../../services/api';
 import Input from '../../components/Input';
 import Logo from '../../components/Logo';
-import AdBanner from '../../components/AdBanner';
+
 
 const ChatScreen = ({ navigation }) => {
   const { colors } = useTheme();
@@ -189,7 +189,7 @@ const ChatScreen = ({ navigation }) => {
         </View>
 
         {/* Ad Banner at Top to avoid keyboard issues */}
-        <AdBanner />
+
 
         {/* Messages */}
         <FlatList
