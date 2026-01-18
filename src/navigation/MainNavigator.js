@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 
 import DashboardScreen from '../screens/dashboard/DashboardScreen';
 import ResumeScreen from '../screens/resume/ResumeScreen';
-import JobsScreen from '../screens/jobs/JobsScreen';
 import StudyScreen from '../screens/study/StudyScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 
@@ -23,8 +22,7 @@ import TopicTimelineScreen from '../screens/study/TopicTimelineScreen';
 import TopicDetailScreen from '../screens/study/TopicDetailScreen';
 import MCQArenaScreen from '../screens/study/MCQArenaScreen';
 
-// Jobs Stack
-import JobDetailsScreen from '../screens/jobs/JobDetailsScreen';
+// Jobs Stack - REMOVED
 
 // Chat Stack
 import ChatScreen from '../screens/chat/ChatScreen';
@@ -61,13 +59,7 @@ const StudyStack = () => (
   </Stack.Navigator>
 );
 
-// Jobs Stack Navigator
-const JobsStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="JobsMain" component={JobsScreen} />
-    <Stack.Screen name="JobDetails" component={JobDetailsScreen} />
-  </Stack.Navigator>
-);
+// Jobs Stack Removed
 
 // Main Tab Navigator
 const MainNavigator = () => {
@@ -83,17 +75,7 @@ const MainNavigator = () => {
           headerShown: false,
         }}
       />
-      <Stack.Screen
-        name="Chat"
-        component={ChatScreen}
-        options={{
-          presentation: 'modal',
-          headerShown: true,
-          headerTitle: 'CareerLoop AI Coach',
-          headerStyle: { backgroundColor: colors.surface },
-          headerTintColor: colors.text,
-        }}
-      />
+      {/* Chat moved to Tabs */}
 
       {/* Legal Screens */}
       <Stack.Screen
@@ -137,6 +119,9 @@ const MainTabs = () => {
             case 'Jobs':
               iconName = focused ? 'briefcase' : 'briefcase-outline';
               break;
+            case 'Chat':
+              iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+              break;
             case 'Study':
               iconName = focused ? 'school' : 'school-outline';
               break;
@@ -163,7 +148,7 @@ const MainTabs = () => {
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Resume" component={ResumeStack} />
-      <Tab.Screen name="Jobs" component={JobsStack} />
+      <Tab.Screen name="Chat" component={ChatScreen} />
       <Tab.Screen name="Study" component={StudyStack} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>

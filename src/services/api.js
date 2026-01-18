@@ -165,21 +165,7 @@ export const resumeAPI = {
   deleteResume: (id) =>
     apiClient.delete(`/resume/${id}`),
 };
-
-// Jobs API endpoints
-export const jobsAPI = {
-  getRecommendedJobs: (page = 1, role = null) => {
-    let url = `/jobs/recommended?page=${page}`;
-    if (role) url += `&role=${encodeURIComponent(role)}`;
-    return apiClient.get(url);
-  },
-
-  getJobMatchScore: (jobId) =>
-    apiClient.get(`/jobs/match-score/${jobId}`),
-
-  getMissingSkills: (jobId) =>
-    apiClient.get(`/jobs/missing-skills/${jobId}`),
-};
+// Stray code removed
 
 
 import { OFFLINE_PLANS, OFFLINE_EXAMS } from '../data/offlineData';

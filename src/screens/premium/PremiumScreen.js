@@ -16,6 +16,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { paymentAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import CustomToast from '../../components/CustomToast';
+import AdBanner from '../../components/AdBanner';
 
 // Conditionally require Razorpay for Native
 let RazorpayCheckout = null;
@@ -32,12 +33,12 @@ const PremiumScreen = ({ navigation }) => {
   const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
 
   const plans = [
-    { id: 'monthly', title: 'Monthly Starter', price: '₹99' },
-    { id: 'yearly', title: 'Annual Pro', price: '₹299', best: true },
+    { id: 'monthly', title: 'Monthly Starter', price: '₹79' },
+    { id: 'yearly', title: 'Annual Pro', price: '₹249', best: true },
   ];
 
   const features = [
-    'Resume AI Analysis (Detailed)',
+    'Resume AI Analysis unlimited ',
     'Personalized AI Tips',
     '30-Day Study Plan',
     'Unlimited MCQs',
@@ -181,7 +182,8 @@ const PremiumScreen = ({ navigation }) => {
 
       {/* SCROLLABLE CONTENT (LIKE StudyScreen) */}
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        style={{ flex: 1 }}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={onRefresh} tintColor="#FFF" />
@@ -251,13 +253,16 @@ const PremiumScreen = ({ navigation }) => {
         </View>
       </ScrollView>
 
+
+      <AdBanner />
+
       <CustomToast
         visible={toast.visible}
         message={toast.message}
         type={toast.type}
         onHide={() => setToast(prev => ({ ...prev, visible: false }))}
       />
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 

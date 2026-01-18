@@ -21,6 +21,7 @@ import Button from '../../components/Button';
 import ProgressBar from '../../components/ProgressBar';
 import FancyLoader from '../../components/FancyLoader';
 import PremiumLimitModal from '../../components/PremiumLimitModal';
+import AdBanner from '../../components/AdBanner';
 
 const ResumeScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
@@ -214,7 +215,8 @@ const ResumeScreen = ({ navigation, route }) => {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {loading && <FancyLoader message="Analyzing your resume..." />}
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        style={{ flex: 1 }}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 }]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -366,6 +368,7 @@ const ResumeScreen = ({ navigation, route }) => {
 
 
       </ScrollView>
+      <AdBanner />
       {/* LIMIT MODAL */}
       <Modal
         visible={limitModalVisible}

@@ -15,6 +15,7 @@ import { useTheme } from '../../context/ThemeContext';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import ProgressBar from '../../components/ProgressBar';
+import AdBanner from '../../components/AdBanner';
 
 const JobDetailsScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
@@ -351,6 +352,7 @@ Requirements:
           </View>
         </Card>
       </ScrollView>
+      <AdBanner />
     </SafeAreaView>
   );
 };

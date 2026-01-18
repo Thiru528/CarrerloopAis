@@ -19,6 +19,7 @@ import ProgressBar from '../../components/ProgressBar';
 import Button from '../../components/Button';
 import Logo from '../../components/Logo';
 import FloatingActionButton from '../../components/FloatingActionButton';
+import AdBanner from '../../components/AdBanner';
 
 const DashboardScreen = ({ navigation }) => {
   const { colors } = useTheme();
@@ -68,9 +69,7 @@ const DashboardScreen = ({ navigation }) => {
     return 'Good Evening';
   };
 
-  const openChat = () => {
-    navigation.navigate('Chat');
-  };
+  // openChat removed
 
   if (loading) {
     return (
@@ -92,7 +91,8 @@ const DashboardScreen = ({ navigation }) => {
       />
       <SafeAreaView style={[styles.container]}>
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          style={{ flex: 1 }}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 }]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
@@ -122,9 +122,7 @@ const DashboardScreen = ({ navigation }) => {
                   <Ionicons name="diamond" size={20} color={colors.premium} />
                 </TouchableOpacity>
               )}
-              <TouchableOpacity onPress={openChat} style={styles.chatButton}>
-                <Ionicons name="chatbubble-outline" size={24} color={colors.primary} />
-              </TouchableOpacity>
+              {/* Chat button removed from header */}
             </View>
           </View>
 
@@ -355,6 +353,7 @@ const DashboardScreen = ({ navigation }) => {
             </Text>
           </Card>
         </ScrollView>
+        <AdBanner />
       </SafeAreaView>
     </View>
   );

@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "CareerLoop AI",
-    "slug": "careerloop-ai",
+    "slug": "carrerloopai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,7 +20,11 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.careerloop.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -45,9 +49,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "43662035-1504-44b2-86a4-e9544559b139"
+        "projectId": "eec71426-29f8-4d78-be5f-b93a8f16471e"
       }
     },
-    "owner": "thiru58"
+    "owner": "thiru58s-organization"
   }
 }

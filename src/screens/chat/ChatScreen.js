@@ -21,6 +21,7 @@ import { useAuth } from '../../context/AuthContext';
 import { chatAPI } from '../../services/api';
 import Input from '../../components/Input';
 import Logo from '../../components/Logo';
+import AdBanner from '../../components/AdBanner';
 
 const ChatScreen = ({ navigation }) => {
   const { colors } = useTheme();
@@ -30,6 +31,14 @@ const ChatScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [typing, setTyping] = useState(false);
   const [limitModalVisible, setLimitModalVisible] = useState(false);
+  const [dailyCount, setDailyCount] = useState(0);
+
+  // Fallback for chat count from user object or safe default
+  useEffect(() => {
+    if (user) {
+      setDailyCount(user.dailyChatCount || 0);
+    }
+  }, [user]);
 
   const flatListRef = useRef();
 
@@ -139,9 +148,7 @@ const ChatScreen = ({ navigation }) => {
       >
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
+          <View style={{ width: 40 }} />
           <View style={styles.headerTitleContainer}>
             {/* Use Logo Component */}
             <Logo size={32} style={{ marginRight: 10 }} />
@@ -149,7 +156,9 @@ const ChatScreen = ({ navigation }) => {
               <Text style={[styles.headerTitle, { color: colors.text }]}>AI Career Coach</Text>
               <View style={styles.statusRow}>
                 <View style={styles.onlineDot} />
-                <Text style={[styles.headerStatus, { color: colors.textSecondary }]}>Online</Text>
+                <Text style={[styles.headerStatus, { color: colors.textSecondary }]}>
+                  {user?.isPremium ? 'Unlimited Access ♾️' : `${3 - (user?.dailyChatCount || 0)} messages left today`}
+                </Text>
               </View>
             </View>
           </View>
@@ -179,7 +188,9 @@ const ChatScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Messages */}
+        {/* Ad Banner at Top to avoid keyboard issues */}
+        <AdBanner />
+
         {/* Messages */}
         <FlatList
           ref={flatListRef}
